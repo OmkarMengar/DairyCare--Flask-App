@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DairyCare — Cow Management Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <h1 id="appTitle">🐄 DairyCare Dashboard</h1>
+                <div class="user-action-nav">
+                    <span class="user-badge">📱 {{ user_phone }}</span>
+                    <button id="langToggleBtn" onclick="toggleLanguage()" class="lang-btn">मराठी / English</button>
+                    <a href="/logout" class="logout-btn">Logout / बाहेर पडा</a>
+                </div>
+            </div>
+            <p id="appSubtitle">Smart Cow Management System</p>
+        </header>
+
+        <!-- PWA Direct Install Button Only -->
+        <div style="text-align: center; margin: 10px 0;">
+            <button id="installAppBtn" onclick="installPWA()" style="display: none; background-color: #27ae60; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                📲 Install DairyCare App / मोबाईल ॲप इन्स्टॉल करा
+            </button>
+        </div>
+
+        <!-- Search Section -->
+        <section class="search-box">
+            <input type="text" id="tagInput" placeholder="Enter Cow Tag No (e.g. COW-001)">
+            <button onclick="searchCow()" id="searchBtn">Search / शोधा</button>
+        </section>
+
+        <!-- Action Navigation -->
+        <div style="text-align: center; margin: 15px 0;">
+            <button onclick="loadMyRecords()" class="save-btn" style="background-color: #2c3e50; max-width: 250px;">📋 My Records / माझे रेकॉर्ड्स</button>
+        </div>
+
+        <!-- My Records Section -->
+        <section id="myRecordsSection" class="records-section" style="display: none; background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+            <h2 style="margin-bottom: 15px; color: #2c3e50;">📋 Registered Cows / सर्व नोंदवलेल्या गाई</h2>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="background-color: #f8fafc; border-bottom: 2px solid #cbd5e1;">
+                            <th style="padding: 10px;">Tag No</th>
+                            <th style="padding: 10px;">Name</th>
+                            <th style="padding: 10px;">Breed</th>
+                            <th style="padding: 10px;">Status</th>
+                            <th style="padding: 10px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsTableBody">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Result Card -->
+        <section id="resultContainer" class="result-card" style="display: none;">
+            <h2 id="cowTagTitle"></h2>
+            
+            <div class="details-grid">
+                <div class="card">
+                    <h3 id="lblBasic">🐄 Basic Details</h3>
+                    <p><strong id="lblName">Name:</strong> <span id="cowName"></span></p>
+                    <p><strong id="lblBreed">Breed:</strong> <span id="cowBreed"></span></p>
+                    <p><strong id="lblAge">Age:</strong> <span id="cowAge"></span> <span id="lblYears">years</span></p>
+                </div>
+
+                <div class="card highlight">
+                    <h3 id="lblPregnancy">🤰 Pregnancy & AI Status</h3>
+                    <p><strong id="lblStatus">Status:</strong> <span id="pregStatus"></span></p>
+                    <p><strong id="lblAiDate">AI Date:</strong> <span id="aiDate"></span></p>
+                    <p><strong id="lblCalvingDate">Expected Calving:</strong> <span id="calvingDate"></span></p>
+                    <p class="days-badge">⏳ <strong id="lblDaysRem">Days Remaining:</strong> <span id="daysRemaining"></span></p>
+                </div>
+
+                <div class="card">
+                    <h3 id="lblHealth">💊 Health & History</h3>
+                    <p><strong id="lblSupplements">Supplements:</strong> <span id="supplements"></span></p>
+                    <p><strong id="lblTreatments">Treatments:</strong> <span id="treatments"></span></p>
+                    <p><strong id="lblVaccines">Vaccinations:</strong> <span id="vaccines"></span></p>
+                </div>
+            </div>
+
+            <!-- Complete Timeline Section -->
+            <div class="timeline-section">
+                <h3 id="lblTimelineTitle">📋 Record Timeline / घटनाक्रम</h3>
+                <ul class="timeline" id="cowTimeline">
+                    <!-- Dynamic timeline items via JS -->
+                </ul>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons" style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="fillEditForm()" class="edit-btn" style="background: #f39c12; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">✏️ Edit Record</button>
+                <button onclick="deleteCow()" class="delete-btn" style="background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">🗑️ Delete Record</button>
+            </div>
+        </section>
+
+        <div id="errorMsg" class="error" style="display: none;"></div>
+
+        <!-- Add New Cow Form -->
+        <section class="add-cow-section">
+            <h2 id="lblAddNewCow">➕ Add New Cow Record / नवीन नोंद जोडा</h2>
+            <form id="addCowForm" onsubmit="saveCow(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Tag No / टॅग क्र.</label>
+                        <input type="text" id="addTagNo" placeholder="e.g. COW-003" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Cow Name / गाईचे नाव</label>
+                        <input type="text" id="addName" placeholder="e.g. Lakshmi" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Breed / जात (ब्रीड)</label>
+                        <input type="text" id="addBreed" placeholder="e.g. Gir, HF" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Age (Years) / वय (वर्षे)</label>
+                        <input type="number" id="addAge" placeholder="e.g. 4" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Pregnancy Status / गाभण स्थिती</label>
+                        <select id="addPregStatus">
+                            <option value="Not Pregnant">Not Pregnant (गाभण नाही)</option>
+                            <option value="Pregnant">Pregnant (गाभण)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>💉 AI Date / भरवल्याची तारीख</label>
+                        <input type="date" id="addAiDate">
+                    </div>
+
+                    <div class="form-group">
+                        <label>📅 Expected Calving Date / संभाव्य विण्याची तारीख</label>
+                        <input type="date" id="addCalvingDate">
+                    </div>
+
+                    <div class="form-group">
+                        <label>💊 Supplements / पूरक आहार</label>
+                        <input type="text" id="addSupplements" placeholder="e.g. Calcium">
+                    </div>
+
+                    <div class="form-group">
+                        <label>🩺 Treatment History / उपचाराचा इतिहास</label>
+                        <input type="text" id="addTreatments" placeholder="e.g. Deworming">
+                    </div>
+
+                    <div class="form-group">
+                        <label>🛡️ Vaccination History / लसीकरण इतिहास</label>
+                        <input type="text" id="addVaccines" placeholder="e.g. FMD Vaccine">
+                    </div>
+                </div>
+                <button type="submit" class="save-btn" id="lblSaveBtn">Save Record / सेव्ह करा</button>
+            </form>
+        </section>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        let deferredPrompt;
+        const installBtn = document.getElementById('installAppBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'inline-block';
+        });
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('App Installed Successfully');
+                    }
+                    deferredPrompt = null;
+                    installBtn.style.display = 'none';
+                });
+            }
+        }
+    </script>
+</body>
+</html>

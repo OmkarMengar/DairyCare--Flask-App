@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DairyCare — Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body style="background: #f1f5f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0;">
+
+    <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 90%; max-width: 380px; text-align: center;">
+        <h1 style="color: #27ae60; margin-bottom: 5px;">🐄 DairyCare</h1>
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 25px;">शेतकरी लॉगिन / Farmer Login</p>
+
+        <!-- Step 1: Mobile Number -->
+        <div id="phoneStep">
+            <div style="margin-bottom: 15px; text-align: left;">
+                <label style="font-weight: bold; font-size: 14px; color: #334155;">मोबाईल नंबर / Phone Number</label>
+                <input type="tel" id="userPhone" placeholder="१० अंकी मोबाईल नंबर टाका" maxlength="10" required style="width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 16px; box-sizing: border-box;">
+            </div>
+            <button onclick="loginSendOTP()" style="width: 100%; background: #27ae60; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer;">OTP पाठवा</button>
+        </div>
+
+        <!-- Step 2: OTP Entry -->
+        <div id="otpStep" style="display: none;">
+            <div style="margin-bottom: 15px; text-align: left;">
+                <label style="font-weight: bold; font-size: 14px; color: #334155;">OTP टाका / Enter OTP:</label>
+                <input type="number" id="otpInput" placeholder="Enter OTP" maxlength="4" style="width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 16px; text-align: center; letter-spacing: 4px; box-sizing: border-box;">
+            </div>
+            <button onclick="loginVerifyOTP()" style="width: 100%; background: #007bc4; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer;">लॉगिन करा</button>
+        </div>
+
+        <p id="statusMsg" style="margin-top: 15px; font-size: 14px; color: #e74c3c; font-weight: bold;"></p>
+    </div>
+
+    <script>
+        async function loginSendOTP() {
+            const phone = document.getElementById('userPhone').value.trim();
+            const statusMsg = document.getElementById('statusMsg');
+
+            if (phone.length !== 10) {
+                statusMsg.innerText = "कृपया १० अंकी वैध मोबाईल नंबर टाका!";
+                return;
+            }
+
+            statusMsg.style.color = "#334155";
+            statusMsg.innerText = "OTP पाठवला जात आहे...";
+
+            try {
+                const response = await fetch('/api/send-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: phone })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.message);
+                    document.getElementById('phoneStep').style.display = 'none';
+                    document.getElementById('otpStep').style.display = 'block';
+                    statusMsg.innerText = "";
+                } else {
+                    statusMsg.style.color = "#e74c3c";
+                    statusMsg.innerText = data.error || "काहीतरी चूक झाली!";
+                }
+            } catch (err) {
+                statusMsg.style.color = "#e74c3c";
+                statusMsg.innerText = "सर्व्हर कनेक्ट झाला नाही!";
+            }
+        }
+
+        async function loginVerifyOTP() {
+            const otp = document.getElementById('otpInput').value.trim();
+            const statusMsg = document.getElementById('statusMsg');
+
+            try {
+                const response = await fetch('/api/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ otp: otp })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    window.location.href = data.redirect;
+                } else {
+                    statusMsg.style.color = "#e74c3c";
+                    statusMsg.innerText = data.error;
+                }
+            } catch (err) {
+                statusMsg.innerText = "लॉगिन अयशस्वी!";
+            }
+        }
+    </script>
+</body>
+</html>
