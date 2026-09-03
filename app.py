@@ -190,19 +190,50 @@ def get_all_cows():
     if not user_phone:
         return jsonify({'error': 'कृपया आधी लॉगिन करा!'}), 401
     
+    # फोन नंबर नेहमी १० अंकी फॉरमॅटमध्ये साफ करा (उदा. 7559479851)
     clean_phone = "".join(filter(str.isdigit, str(user_phone)))[-10:]
     
     conn = get_db_connection()
-    # फक्त या युझरच्या १० अंकी किंवा ९१ लावलेल्या नंबरशी जुळणाऱ्या गाई शोधा
+    # फक्त या युझरच्या १० अंकी नंबरशी जुळणाऱ्याच गाई आणा
     cows = conn.execute(
-        'SELECT * FROM cows WHERE user_phone = ? OR user_phone LIKE ? ORDER BY id DESC', 
-        (user_phone, f"%{clean_phone}")
+        'SELECT * FROM cows WHERE user_phone LIKE ? ORDER BY id DESC', 
+        (f"%{clean_phone}",)
     ).fetchall()
-    
     conn.close()
     
-    # जर या युझरची कोणतीही गाय नसेल तर मोकळी लिस्ट पाठवा (दुसऱ्याचा डेटा दाखवू नका)
     return jsonify([dict(cow) for cow in cows])
+
+@app.route('/api/cow/add', methods=['POST'])
+def add_cow():
+    user_phone = session.get('user_phone')
+    if not user_phone:
+        return jsonify({'error': 'कृपया आधी लॉगिन करा!'}), 401
+    
+    # सेव्ह करतानाही नेहमी १० अंकी शुद्ध नंबरच टाका
+    clean_phone = "".join(filter(str.isdigit, str(user_phone)))[-10:]
+    data = request.json or {}
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO cows (
+                user_phone, tag_no, name, breed, age, pregnancy_status,
+                ai_date, expected_calving_date, supplements,
+                treatment_history, vaccination_history
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            clean_phone, data['tag_no'], data['name'], data['breed'], data['age'],
+            data['pregnancy_status'], data['ai_date'], data['expected_calving_date'],
+            data['supplements'], data['treatment_history'], data['vaccination_history']
+        ))
+        conn.commit()
+        conn.close()
+        return jsonify({'message': 'Cow record added successfully!'}), 201
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'हा Tag Number आधीच वापरला आहे!'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/cow/<tag_no>', methods=['GET'])
 def get_cow_details(tag_no):
