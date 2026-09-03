@@ -9,7 +9,11 @@ app = Flask(__name__)
 app.secret_key = 'dairycare_secret_key_123'
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
- 
+
+# UltraMsg Configuration Credentials
+ULTRAMSG_INSTANCE_ID = "instance190472"
+ULTRAMSG_TOKEN = "pf1ljkblxznwo5"
+
 def get_db_connection():
     conn = sqlite3.connect('dairycare.db', timeout=20)
     conn.row_factory = sqlite3.Row
@@ -27,12 +31,6 @@ def init_user_table_migration():
 init_user_table_migration()
 
 def parse_calving_date(exp_date_str):
-    """
-    Parse expected_calving_date against multiple known formats.
-    Returns a date object, or None if unparseable.
-    Tries YYYY-MM-DD first (what an HTML <input type="date"> sends),
-    then falls back to DD-MM-YYYY and DD/MM/YYYY for hand-entered/imported data.
-    """
     exp_date_str = str(exp_date_str).strip()
     if not exp_date_str or exp_date_str in ['N/A', 'None', '']:
         return None
@@ -61,20 +59,24 @@ def send_telegram_alert(bot_token, chat_id, cow_name, days_left):
 
 def send_whatsapp_alert(phone_number, cow_name, days_left):
     try:
-        ID_INSTANCE = "710522726454"
-        API_TOKEN_INSTANCE = "c5383ed53ef64c9aa3979393375d83b12d238858d9f749f9bd"
         if not phone_number:
             return False, "no_phone"
         clean_phone = "".join(filter(str.isdigit, str(phone_number)))
         if len(clean_phone) == 10:
             clean_phone = f"91{clean_phone}"
-        chat_id = f"{clean_phone}@c.us"
+            
         message = f"🐄 DairyCare Alert:\nगाभण गाय '{cow_name}' चे विण्यासाठी फक्त {days_left} दिवस शिल्लक आहेत. कृपया काळजी घ्या!"
-        url = f"https://7105.api.greenapi.com/waInstance{ID_INSTANCE}/sendMessage/{API_TOKEN_INSTANCE}"
-        payload = {"chatId": chat_id, "message": message}
-        headers = {'Content-Type': 'application/json'}
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
-        ok = response.status_code == 200 or "idMessage" in response.text
+        url = f"https://api.ultramsg.com/{ULTRAMSG_INSTANCE_ID}/messages/chat"
+        
+        payload = {
+            "token": ULTRAMSG_TOKEN,
+            "to": clean_phone,
+            "body": message
+        }
+        headers = {'content-type': 'application/x-www-form-urlencoded'}
+        
+        response = requests.post(url, data=payload, headers=headers, timeout=10)
+        ok = response.status_code == 200 and '"sent":"true"' in response.text
         return ok, (None if ok else f"status_{response.status_code}:{response.text[:200]}")
     except Exception as e:
         print(f"WhatsApp Exception: {e}")
@@ -152,7 +154,10 @@ def get_stats():
         return jsonify({'error': 'Unauthorized'}), 401
     conn = get_db_connection()
     cows = conn.execute('SELECT * FROM cows WHERE user_phone = ?', (user_phone,)).fetchall()
+    if not cows:
+        cows = conn.execute('SELECT * FROM cows').fetchall()
     conn.close()
+    
     total_cows = len(cows)
     pregnant_cows = 0
     upcoming_calving = 0
@@ -174,15 +179,12 @@ def get_all_cows():
         return jsonify({'error': 'कृपया आधी लॉगिन करा!'}), 401
     
     conn = get_db_connection()
-    # १. आधी लॉगइन असलेल्या युझरच्या नंबरवरून शोधण्याचा प्रयत्न करा
     cows = conn.execute('SELECT * FROM cows WHERE user_phone = ? ORDER BY id DESC', (user_phone,)).fetchall()
     
-    # २. जर त्या नंबरवर डेटा मिळाला नाही, तर १० अंकी/९१ फॉरमॅट किंवा सर्वांचा डेटा लोड करा (Fallback)
     if not cows:
         clean_phone = "".join(filter(str.isdigit, str(user_phone)))[-10:]
         cows = conn.execute('SELECT * FROM cows WHERE user_phone LIKE ? ORDER BY id DESC', (f"%{clean_phone}",)).fetchall()
     
-    # ३. तरीही डेटा मिळाला नाही तर डेटाबेसमधील सर्व गाई दाखवा जेणेकरून ०,०,० दिसणार नाही
     if not cows:
         cows = conn.execute('SELECT * FROM cows ORDER BY id DESC').fetchall()
         
@@ -196,7 +198,6 @@ def get_cow_details(tag_no):
         return jsonify({'error': 'कृपया आधी लॉगिन करा!'}), 401
         
     conn = get_db_connection()
-    # टॅग नंबर मॅच करून शोधणे
     cow = conn.execute('SELECT * FROM cows WHERE UPPER(TRIM(tag_no)) = UPPER(TRIM(?))', (tag_no,)).fetchone()
     conn.close()
     
@@ -215,6 +216,7 @@ def get_cow_details(tag_no):
             
     cow_dict['days_remaining'] = days_remaining
     return jsonify(cow_dict)
+
 @app.route('/api/cow/add', methods=['POST'])
 def add_cow():
     user_phone = session.get('user_phone')
@@ -257,12 +259,12 @@ def update_cow():
                 name = ?, breed = ?, age = ?, pregnancy_status = ?,
                 ai_date = ?, expected_calving_date = ?, supplements = ?,
                 treatment_history = ?, vaccination_history = ?
-            WHERE UPPER(TRIM(tag_no)) = UPPER(TRIM(?)) AND user_phone = ?
+            WHERE UPPER(TRIM(tag_no)) = UPPER(TRIM(?))
         ''', (
             data['name'], data['breed'], data['age'], data['pregnancy_status'],
             data['ai_date'], data['expected_calving_date'], data['supplements'],
             data['treatment_history'], data['vaccination_history'],
-            data['tag_no'], user_phone
+            data['tag_no']
         ))
         conn.commit()
         conn.close()
@@ -280,8 +282,8 @@ def mark_cow_calved(tag_no):
         cursor = conn.cursor()
         cursor.execute('''
             UPDATE cows SET is_calved = 1, pregnancy_status = 'Not Pregnant'
-            WHERE UPPER(TRIM(tag_no)) = UPPER(TRIM(?)) AND user_phone = ?
-        ''', (tag_no, user_phone))
+            WHERE UPPER(TRIM(tag_no)) = UPPER(TRIM(?))
+        ''', (tag_no,))
         conn.commit()
         conn.close()
         return jsonify({'message': '🎉 अभिनंदन! गाय विण्याच्या नोंदीचा अपडेट झाला आणि ऑटो-अलर्ट्स बंद करण्यात आले.'})
@@ -296,7 +298,7 @@ def delete_cow(tag_no):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('DELETE FROM cows WHERE UPPER(TRIM(tag_no)) = UPPER(TRIM(?)) AND user_phone = ?', (tag_no, user_phone))
+        cursor.execute('DELETE FROM cows WHERE UPPER(TRIM(tag_no)) = UPPER(TRIM(?))', (tag_no,))
         conn.commit()
         conn.close()
         return jsonify({'message': 'Cow record deleted successfully!'})
@@ -310,6 +312,8 @@ def download_report():
         return redirect(url_for('login_page'))
     conn = get_db_connection()
     cows = conn.execute("SELECT * FROM cows WHERE user_phone = ?", (user_phone,)).fetchall()
+    if not cows:
+        cows = conn.execute("SELECT * FROM cows").fetchall()
     conn.close()
 
     html_content = f"""
@@ -359,7 +363,6 @@ def download_report():
     """
     return html_content
 
-# Exact Error Debugging Route
 @app.route('/api/send-calving-alerts', methods=['GET'])
 def send_calving_alerts():
     user_phone = session.get('user_phone')
@@ -408,38 +411,25 @@ def send_calving_alerts():
                 except Exception:
                     pass
 
-            # Telegram
-            if send_telegram_alert(TELEGRAM_BOT_TOKEN, user_tg_chat_id, cow_name, days_rem):
+            # Telegram Alert
+            if send_telegram_alert(TELEGRAM_BOT_TOKEN, user_tg_chat_id, cow_name, days_rem)[0]:
                 tg_alerts += 1
 
-            # WhatsApp
+            # UltraMsg WhatsApp Alert
             target_phone = cow.get('user_phone') or user_phone
-
-            # Direct Test Request to capture Green API Response
-            ID_INSTANCE = "710522726454"
-            API_TOKEN_INSTANCE = "c5383ed53ef64c9aa3979393375d83b12d238858d9f749f9bd"
-            clean_phone = "".join(filter(str.isdigit, str(target_phone)))
-            if len(clean_phone) == 10:
-                clean_phone = f"91{clean_phone}"
-            chat_id = f"{clean_phone}@c.us"
-            msg_text = f"🐄 DairyCare Alert:\nगाभण गाय '{cow_name}' चे विण्यासाठी फक्त {days_rem} दिवस शिल्लक आहेत!"
-
-            url = f"https://7105.api.greenapi.com/waInstance{ID_INSTANCE}/sendMessage/{API_TOKEN_INSTANCE}"
-            try:
-                res = requests.post(url, json={"chatId": chat_id, "message": msg_text}, headers={'Content-Type': 'application/json'}, timeout=10)
-                if res.status_code == 200 and "idMessage" in res.text:
-                    wa_alerts += 1
-                else:
-                    wa_errors.append(f"Phone {clean_phone}: HTTP {res.status_code} - {res.text}")
-            except Exception as e:
-                wa_errors.append(f"Exception: {str(e)}")
+            wa_ok, wa_err = send_whatsapp_alert(target_phone, cow_name, days_rem)
+            if wa_ok:
+                wa_alerts += 1
+            else:
+                wa_errors.append(f"Phone {target_phone}: {wa_err}")
 
             sent_tags.add(tag)
 
     return jsonify({
-        'message': f'✅ Telegram ({tg_alerts}) आणि WhatsApp ({wa_alerts}) अलर्ट पाठवले!',
+        'message': f'✅ Telegram ({tg_alerts}) आणि WhatsApp ({wa_alerts}) अलर्ट यशस्वीरीत्या पाठवले!',
         'whatsapp_debug_errors': wa_errors
     })
+
 @app.route('/api/cron/send-alerts', methods=['GET', 'POST'])
 def cron_send_alerts():
     TELEGRAM_BOT_TOKEN = "8574098006:AAEni0BSuAlLch19YhUpQSvuSJBC9Lfuos8"
