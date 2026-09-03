@@ -9,13 +9,12 @@ app = Flask(__name__)
 app.secret_key = 'dairycare_secret_key_123'
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
+ 
 def get_db_connection():
-    db_path = os.path.join(BASE_DIR, 'dairycare.db')
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect('dairycare.db', timeout=20)
     conn.row_factory = sqlite3.Row
     return conn
-
+    
 def init_user_table_migration():
     try:
         conn = get_db_connection()
