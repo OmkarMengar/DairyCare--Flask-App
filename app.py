@@ -479,5 +479,4 @@ def cron_send_alerts():
 
 if __name__ == '__main__':
     from database import init_db
-    init_db()
-    app.run(host='0.0.0.0', debug=True, port=5000)
+    init_db()  <-- ही लाईन जेव्हा जेव्हा रन होते, जर डेटाबेस चुकीच्या पद्धतीने रिसेट होत असेल तर डेटा उडतो.
