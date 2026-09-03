@@ -3,193 +3,617 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DairyCare — Cow Management Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>DairyCare - Cow Management Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #27ae60;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 26px;
+        }
+
+        .user-info {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        .logout-btn {
+            color: #e74c3c;
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .logout-btn:hover {
+            text-decoration: underline;
+        }
+
+        .action-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .card-1 { background: #3498db; }
+        .card-2 { background: #2ecc71; }
+        .card-3 { background: #e67e22; }
+
+        .card span {
+            display: block;
+            font-size: 24px;
+            margin-top: 5px;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-green {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        .btn-green:hover {
+            background-color: #219150;
+        }
+
+        .btn-orange {
+            background-color: #e67e22;
+            color: white;
+        }
+
+        .btn-orange:hover {
+            background-color: #d35400;
+        }
+
+        .btn-blue {
+            background-color: #0088cc;
+            color: white;
+        }
+
+        .btn-blue:hover {
+            background-color: #006699;
+        }
+
+        .telegram-setup-box {
+            background: #eef2f5;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #0088cc;
+            margin-bottom: 25px;
+        }
+
+        .telegram-setup-box h4 {
+            color: #0088cc;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-left: 4px solid #27ae60;
+            padding-left: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .form-group input, 
+        .form-group select, 
+        .form-group textarea {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .form-group input:focus, 
+        .form-group select:focus, 
+        .form-group textarea:focus {
+            border-color: #27ae60;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #2c3e50;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="header-top">
-                <h1 id="appTitle">🐄 DairyCare Dashboard</h1>
-                <div class="user-action-nav">
-                    <span class="user-badge">📱 {{ user_phone }}</span>
-                    <button id="langToggleBtn" onclick="toggleLanguage()" class="lang-btn">मराठी / English</button>
-                    <a href="/logout" class="logout-btn">Logout / बाहेर पडा</a>
-                </div>
-            </div>
-            <p id="appSubtitle">Smart Cow Management System</p>
-        </header>
 
-        <!-- PWA Direct Install Button Only -->
-        <div style="text-align: center; margin: 10px 0;">
-            <button id="installAppBtn" onclick="installPWA()" style="display: none; background-color: #27ae60; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                📲 Install DairyCare App / मोबाईल ॲप इन्स्टॉल करा
-            </button>
+<div class="container">
+    <header>
+        <h1>🐄 DairyCare Dashboard</h1>
+        <div class="user-info">
+            📱 <span id="displayUserPhone">{{ user_phone }}</span>
+            <a href="/logout" class="logout-btn">Logout</a>
         </div>
+    </header>
 
-        <!-- Search Section -->
-        <section class="search-box">
-            <input type="text" id="tagInput" placeholder="Enter Cow Tag No (e.g. COW-001)">
-            <button onclick="searchCow()" id="searchBtn">Search / शोधा</button>
-        </section>
-
-        <!-- Action Navigation -->
-        <div style="text-align: center; margin: 15px 0;">
-            <button onclick="loadMyRecords()" class="save-btn" style="background-color: #2c3e50; max-width: 250px;">📋 My Records / माझे रेकॉर्ड्स</button>
+    <!-- Stats Section -->
+    <div class="action-cards">
+        <div class="card card-1">
+            सर्व गाई
+            <span id="statTotal">0</span>
         </div>
-
-        <!-- My Records Section -->
-        <section id="myRecordsSection" class="records-section" style="display: none; background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-            <h2 style="margin-bottom: 15px; color: #2c3e50;">📋 Registered Cows / सर्व नोंदवलेल्या गाई</h2>
-            <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                    <thead>
-                        <tr style="background-color: #f8fafc; border-bottom: 2px solid #cbd5e1;">
-                            <th style="padding: 10px;">Tag No</th>
-                            <th style="padding: 10px;">Name</th>
-                            <th style="padding: 10px;">Breed</th>
-                            <th style="padding: 10px;">Status</th>
-                            <th style="padding: 10px;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="recordsTableBody">
-                        <!-- Dynamic content -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- Result Card -->
-        <section id="resultContainer" class="result-card" style="display: none;">
-            <h2 id="cowTagTitle"></h2>
-            
-            <div class="details-grid">
-                <div class="card">
-                    <h3 id="lblBasic">🐄 Basic Details</h3>
-                    <p><strong id="lblName">Name:</strong> <span id="cowName"></span></p>
-                    <p><strong id="lblBreed">Breed:</strong> <span id="cowBreed"></span></p>
-                    <p><strong id="lblAge">Age:</strong> <span id="cowAge"></span> <span id="lblYears">years</span></p>
-                </div>
-
-                <div class="card highlight">
-                    <h3 id="lblPregnancy">🤰 Pregnancy & AI Status</h3>
-                    <p><strong id="lblStatus">Status:</strong> <span id="pregStatus"></span></p>
-                    <p><strong id="lblAiDate">AI Date:</strong> <span id="aiDate"></span></p>
-                    <p><strong id="lblCalvingDate">Expected Calving:</strong> <span id="calvingDate"></span></p>
-                    <p class="days-badge">⏳ <strong id="lblDaysRem">Days Remaining:</strong> <span id="daysRemaining"></span></p>
-                </div>
-
-                <div class="card">
-                    <h3 id="lblHealth">💊 Health & History</h3>
-                    <p><strong id="lblSupplements">Supplements:</strong> <span id="supplements"></span></p>
-                    <p><strong id="lblTreatments">Treatments:</strong> <span id="treatments"></span></p>
-                    <p><strong id="lblVaccines">Vaccinations:</strong> <span id="vaccines"></span></p>
-                </div>
-            </div>
-
-            <!-- Complete Timeline Section -->
-            <div class="timeline-section">
-                <h3 id="lblTimelineTitle">📋 Record Timeline / घटनाक्रम</h3>
-                <ul class="timeline" id="cowTimeline">
-                    <!-- Dynamic timeline items via JS -->
-                </ul>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="action-buttons" style="margin-top: 20px; display: flex; gap: 10px;">
-                <button onclick="fillEditForm()" class="edit-btn" style="background: #f39c12; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">✏️ Edit Record</button>
-                <button onclick="deleteCow()" class="delete-btn" style="background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">🗑️ Delete Record</button>
-            </div>
-        </section>
-
-        <div id="errorMsg" class="error" style="display: none;"></div>
-
-        <!-- Add New Cow Form -->
-        <section class="add-cow-section">
-            <h2 id="lblAddNewCow">➕ Add New Cow Record / नवीन नोंद जोडा</h2>
-            <form id="addCowForm" onsubmit="saveCow(event)">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Tag No / टॅग क्र.</label>
-                        <input type="text" id="addTagNo" placeholder="e.g. COW-003" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Cow Name / गाईचे नाव</label>
-                        <input type="text" id="addName" placeholder="e.g. Lakshmi" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Breed / जात (ब्रीड)</label>
-                        <input type="text" id="addBreed" placeholder="e.g. Gir, HF" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Age (Years) / वय (वर्षे)</label>
-                        <input type="number" id="addAge" placeholder="e.g. 4" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Pregnancy Status / गाभण स्थिती</label>
-                        <select id="addPregStatus">
-                            <option value="Not Pregnant">Not Pregnant (गाभण नाही)</option>
-                            <option value="Pregnant">Pregnant (गाभण)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>💉 AI Date / भरवल्याची तारीख</label>
-                        <input type="date" id="addAiDate">
-                    </div>
-
-                    <div class="form-group">
-                        <label>📅 Expected Calving Date / संभाव्य विण्याची तारीख</label>
-                        <input type="date" id="addCalvingDate">
-                    </div>
-
-                    <div class="form-group">
-                        <label>💊 Supplements / पूरक आहार</label>
-                        <input type="text" id="addSupplements" placeholder="e.g. Calcium">
-                    </div>
-
-                    <div class="form-group">
-                        <label>🩺 Treatment History / उपचाराचा इतिहास</label>
-                        <input type="text" id="addTreatments" placeholder="e.g. Deworming">
-                    </div>
-
-                    <div class="form-group">
-                        <label>🛡️ Vaccination History / लसीकरण इतिहास</label>
-                        <input type="text" id="addVaccines" placeholder="e.g. FMD Vaccine">
-                    </div>
-                </div>
-                <button type="submit" class="save-btn" id="lblSaveBtn">Save Record / सेव्ह करा</button>
-            </form>
-        </section>
+        <div class="card card-2">
+            गाभण गाई
+            <span id="statPregnant">0</span>
+        </div>
+        <div class="card card-3">
+            येत्या ३० दिवसांत विणाऱ्या
+            <span id="statUpcoming">0</span>
+        </div>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
-    <script>
-        let deferredPrompt;
-        const installBtn = document.getElementById('installAppBtn');
+    <!-- Quick Action Buttons -->
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+        <a href="/download_report" target="_blank" class="btn btn-green">
+            <i class="fa fa-file-pdf"></i> रिपोर्ट डाउनलोड करा (PDF/Print)
+        </a>
+        <button onclick="checkCalvingAlerts()" class="btn btn-orange">
+            <i class="fa fa-bell"></i> नाविन्यपूर्ण Telegram & WhatsApp अलर्ट तपासा
+        </button>
+    </div>
 
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            installBtn.style.display = 'inline-block';
-        });
+    <!-- Telegram Setup Box -->
+    <div class="telegram-setup-box">
+        <h4><i class="fab fa-telegram"></i> Telegram Alert Setup</h4>
+        <p style="font-size: 13px; color: #666;">
+            Telegram वर थेट सूचना मिळवण्यासाठी तुमचा Telegram Chat ID इथे सेट करा (Telegram वर <b>@userinfobot</b> द्वारे शोधू शकता):
+        </p>
+        <div class="input-group">
+            <input type="text" id="telegramChatId" placeholder="Telegram Chat ID टाका (eg. 6010782749)">
+            <button onclick="saveTelegramId()" class="btn btn-blue">Save Chat ID</button>
+        </div>
+    </div>
 
-        function installPWA() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('App Installed Successfully');
-                    }
-                    deferredPrompt = null;
-                    installBtn.style.display = 'none';
-                });
-            }
+    <!-- Search Section -->
+    <div class="section-title">Search Cow Record / नोंद शोधा</div>
+    <div class="search-box">
+        <input type="text" id="searchTagInput" placeholder="Enter Cow Tag No (e.g. COW-001)">
+        <button onclick="searchCow()" class="btn btn-blue">Search / शोधा</button>
+    </div>
+
+    <!-- Add / Update Cow Form -->
+    <div class="section-title" id="formTitle">Add New Cow Record / नवीन नोंद जोडा</div>
+    <form id="cowForm" onsubmit="handleFormSubmit(event)">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="tag_no">Tag No / टॅग क्र.:</label>
+                <input type="text" id="tag_no" required placeholder="e.g. COW-001">
+            </div>
+            <div class="form-group">
+                <label for="name">Cow Name / गाईचे नाव:</label>
+                <input type="text" id="name" required placeholder="e.g. Lakshmi">
+            </div>
+            <div class="form-group">
+                <label for="breed">Breed / जात (ब्रीड):</label>
+                <input type="text" id="breed" placeholder="e.g. Gir, HF">
+            </div>
+            <div class="form-group">
+                <label for="age">Age (Years) / वय (वर्षे):</label>
+                <input type="number" id="age" placeholder="e.g. 4">
+            </div>
+            <div class="form-group">
+                <label for="pregnancy_status">Pregnancy Status / गाभण स्थिती:</label>
+                <select id="pregnancy_status">
+                    <option value="Not Pregnant">Not Pregnant (गाभण नाही)</option>
+                    <option value="Pregnant">Pregnant (गाभण आहे)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="ai_date">AI Date / भरवल्याची तारीख:</label>
+                <input type="date" id="ai_date" onchange="autoCalculateCalvingDate()">
+            </div>
+            <div class="form-group">
+                <label for="expected_calving_date">Expected Calving Date / संभाव्य विण्याची तारीख:</label>
+                <input type="date" id="expected_calving_date">
+            </div>
+            <div class="form-group">
+                <label for="supplements">Supplements / दिलेला आहार-खाद्य:</label>
+                <input type="text" id="supplements" placeholder="e.g. Calcium, Mineral Mixture">
+            </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label for="treatment_history">Treatment / उपचारांचा इतिहास:</label>
+            <textarea id="treatment_history" rows="2" placeholder="e.g. Deworming completed"></textarea>
+        </div>
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label for="vaccination_history">Vaccination / लसीकरण माहिती:</label>
+            <textarea id="vaccination_history" rows="2" placeholder="e.g. FMD Vaccine given"></textarea>
+        </div>
+        <button type="submit" id="submitBtn" class="btn btn-green">Save Record / नोंद जतन करा</button>
+        <button type="button" onclick="resetForm()" class="btn" style="background:#95a5a6; color:white;">Reset</button>
+    </form>
+
+    <!-- Table List Section -->
+    <div class="section-title" style="margin-top: 30px;">All Cow Records / सर्व नोंदी</div>
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>टॅग क्र.</th>
+                    <th>नाव</th>
+                    <th>जात</th>
+                    <th>गाभण स्थिती</th>
+                    <th>विण्याची तारीख</th>
+                    <th>कृती (Actions)</th>
+                </tr>
+            </thead>
+            <tbody id="cowsTableBody">
+                <!-- Dynamic Content Load -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        loadStats();
+        loadAllCows();
+    });
+
+    // AI Date निवडल्यावर २८० दिवस जोडून Expected Calving Date ऑटो-कॅल्क्युलेट करणे
+    function autoCalculateCalvingDate() {
+        var aiDateInput = document.getElementById('ai_date').value;
+        var calvingDateInput = document.getElementById('expected_calving_date');
+
+        if (aiDateInput) {
+            var aiDate = new Date(aiDateInput);
+            // २८० दिवस जोडणे (गाईचा सरासरी गाभणकाळ)
+            aiDate.setDate(aiDate.getDate() + 280);
+
+            var year = aiDate.getFullYear();
+            var month = String(aiDate.getMonth() + 1).padStart(2, '0');
+            var day = String(aiDate.getDate()).padStart(2, '0');
+
+            calvingDateInput.value = year + '-' + month + '-' + day;
+            
+            // ऑटोमॅटिकली Pregnancy Status 'Pregnant' करणे
+            document.getElementById('pregnancy_status').value = 'Pregnant';
         }
-    </script>
+    }
+
+    function loadStats() {
+        fetch('/api/stats')
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if(!data.error) {
+                    document.getElementById('statTotal').innerText = data.total;
+                    document.getElementById('statPregnant').innerText = data.pregnant;
+                    document.getElementById('statUpcoming').innerText = data.upcoming;
+                }
+            })
+            .catch(function(err) { console.error("Stats Load Error:", err); });
+    }
+
+    function loadAllCows() {
+        fetch('/api/cows/all')
+            .then(function(res) { return res.json(); })
+            .then(function(cows) {
+                var tbody = document.getElementById('cowsTableBody');
+                tbody.innerHTML = '';
+                if(!cows || cows.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">कोणतीही नोंद सापडली नाही.</td></tr>';
+                    return;
+                }
+                cows.forEach(function(cow) {
+                    var isPregnant = String(cow.pregnancy_status).toLowerCase().includes('pregnant');
+                    var statusColor = isPregnant ? '#27ae60' : '#7f8c8d';
+                    var calvedBtn = isPregnant ? 
+                        '<button onclick="markCalved(\'' + cow.tag_no + '\')" class="btn btn-sm btn-green">Calved 🎉</button>' : '';
+
+                    tbody.innerHTML += '<tr>' +
+                        '<td><b>' + cow.tag_no + '</b></td>' +
+                        '<td>' + cow.name + '</td>' +
+                        '<td>' + (cow.breed || '-') + '</td>' +
+                        '<td><span style="color:' + statusColor + '; font-weight:bold;">' + cow.pregnancy_status + '</span></td>' +
+                        '<td>' + (cow.expected_calving_date || '-') + '</td>' +
+                        '<td class="action-btns">' +
+                            '<button onclick="editCow(\'' + cow.tag_no + '\')" class="btn btn-sm btn-blue">Edit</button>' +
+                            '<button onclick="deleteCow(\'' + cow.tag_no + '\')" class="btn btn-sm btn-danger">Delete</button>' +
+                            calvedBtn +
+                        '</td>' +
+                    '</tr>';
+                });
+            })
+            .catch(function(err) { console.error("Load Cows Error:", err); });
+    }
+
+    function saveTelegramId() {
+        var chatId = document.getElementById('telegramChatId').value.trim();
+        if(!chatId) {
+            alert('कृपया Telegram Chat ID टाका!');
+            return;
+        }
+
+        fetch('/api/user/update-telegram', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ telegram_chat_id: chatId })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if(data.message) {
+                alert('✅ ' + data.message);
+                document.getElementById('telegramChatId').value = '';
+            } else {
+                alert('❌ ' + data.error);
+            }
+        })
+        .catch(function(err) { alert("Error updating Telegram ID!"); });
+    }
+
+    function checkCalvingAlerts() {
+        fetch('/api/send-calving-alerts')
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if(data.message) {
+                    alert(data.message);
+                } else {
+                    alert('⚠️ ' + data.error);
+                }
+            })
+            .catch(function(err) { alert("Error triggering alerts!"); });
+    }
+
+    function handleFormSubmit(e) {
+        e.preventDefault();
+        var tagNo = document.getElementById('tag_no').value.trim();
+        var isUpdate = document.getElementById('tag_no').disabled;
+
+        var payload = {
+            tag_no: tagNo,
+            name: document.getElementById('name').value,
+            breed: document.getElementById('breed').value,
+            age: document.getElementById('age').value,
+            pregnancy_status: document.getElementById('pregnancy_status').value,
+            ai_date: document.getElementById('ai_date').value,
+            expected_calving_date: document.getElementById('expected_calving_date').value,
+            supplements: document.getElementById('supplements').value,
+            treatment_history: document.getElementById('treatment_history').value,
+            vaccination_history: document.getElementById('vaccination_history').value
+        };
+
+        var endpoint = isUpdate ? '/api/cow/update' : '/api/cow/add';
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if(data.message) {
+                alert('✅ ' + data.message);
+                resetForm();
+                loadStats();
+                loadAllCows();
+            } else {
+                alert('❌ ' + data.error);
+            }
+        });
+    }
+
+    function editCow(tagNo) {
+        fetch('/api/cow/' + tagNo)
+            .then(function(res) { return res.json(); })
+            .then(function(cow) {
+                if(cow.error) {
+                    alert(cow.error);
+                    return;
+                }
+                document.getElementById('tag_no').value = cow.tag_no;
+                document.getElementById('tag_no').disabled = true;
+                document.getElementById('name').value = cow.name;
+                document.getElementById('breed').value = cow.breed || '';
+                document.getElementById('age').value = cow.age || '';
+                document.getElementById('pregnancy_status').value = cow.pregnancy_status;
+                document.getElementById('ai_date').value = cow.ai_date || '';
+                document.getElementById('expected_calving_date').value = cow.expected_calving_date || '';
+                document.getElementById('supplements').value = cow.supplements || '';
+                document.getElementById('treatment_history').value = cow.treatment_history || '';
+                document.getElementById('vaccination_history').value = cow.vaccination_history || '';
+
+                document.getElementById('formTitle').innerText = "Update Cow Record / नोंद अपडेट करा";
+                document.getElementById('submitBtn').innerText = "Update Record / अपडेट करा";
+            });
+    }
+
+    function markCalved(tagNo) {
+        if(confirm("तुम्ही नक्की '" + tagNo + "' या गायीची नोंद 'विली' (Calved) म्हणून अपडेट करू इच्छिता?")) {
+            fetch('/api/cow/mark-calved/' + tagNo, { method: 'POST' })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    alert(data.message || data.error);
+                    loadStats();
+                    loadAllCows();
+                });
+        }
+    }
+
+    function deleteCow(tagNo) {
+        if(confirm("तुम्ही नक्की '" + tagNo + "' चे रेकॉर्ड डिलीट करू इच्छिता?")) {
+            fetch('/api/cow/delete/' + tagNo, { method: 'DELETE' })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    alert(data.message || data.error);
+                    loadStats();
+                    loadAllCows();
+                });
+        }
+    }
+
+    function searchCow() {
+        var tag = document.getElementById('searchTagInput').value.trim();
+        if(!tag) {
+            loadAllCows();
+            return;
+        }
+        fetch('/api/cow/' + tag)
+            .then(function(res) { return res.json(); })
+            .then(function(cow) {
+                var tbody = document.getElementById('cowsTableBody');
+                tbody.innerHTML = '';
+                if(cow.error) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">' + cow.error + '</td></tr>';
+                    return;
+                }
+                var isPregnant = String(cow.pregnancy_status).toLowerCase().includes('pregnant');
+                tbody.innerHTML = '<tr>' +
+                    '<td><b>' + cow.tag_no + '</b></td>' +
+                    '<td>' + cow.name + '</td>' +
+                    '<td>' + (cow.breed || '-') + '</td>' +
+                    '<td><span style="color:' + (isPregnant ? '#27ae60' : '#7f8c8d') + '; font-weight:bold;">' + cow.pregnancy_status + '</span></td>' +
+                    '<td>' + (cow.expected_calving_date || '-') + '</td>' +
+                    '<td class="action-btns">' +
+                        '<button onclick="editCow(\'' + cow.tag_no + '\')" class="btn btn-sm btn-blue">Edit</button>' +
+                        '<button onclick="deleteCow(\'' + cow.tag_no + '\')" class="btn btn-sm btn-danger">Delete</button>' +
+                    '</td>' +
+                '</tr>';
+            });
+    }
+
+    function resetForm() {
+        document.getElementById('cowForm').reset();
+        document.getElementById('tag_no').disabled = false;
+        document.getElementById('formTitle').innerText = "Add New Cow Record / नवीन नोंद जोडा";
+        document.getElementById('submitBtn').innerText = "Save Record / नोंद जतन करा";
+    }
+</script>
+
 </body>
 </html>
