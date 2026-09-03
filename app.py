@@ -65,7 +65,7 @@ def send_whatsapp_alert(phone_number, cow_name, days_left):
         # फक्त अंक बाजूला काढणे
         clean_phone = "".join(filter(str.isdigit, str(phone_number)))
         
-        # १० अंकी नंबर असल्यास +91 जोडणे, १४ अंकी किंवा इतरांसाठी + लावणे
+        # UltraMsg साठी +91 फॉरमॅट सेट करणे
         if len(clean_phone) == 10:
             formatted_phone = f"+91{clean_phone}"
         elif not clean_phone.startswith("+"):
