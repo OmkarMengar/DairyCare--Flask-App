@@ -183,23 +183,25 @@ def get_stats():
                     upcoming_calving += 1
     return jsonify({'total': total_cows, 'pregnant': pregnant_cows, 'upcoming': upcoming_calving})
 
+
 @app.route('/api/cows/all', methods=['GET'])
 def get_all_cows():
     user_phone = session.get('user_phone')
     if not user_phone:
         return jsonify({'error': 'कृपया आधी लॉगिन करा!'}), 401
     
+    clean_phone = "".join(filter(str.isdigit, str(user_phone)))[-10:]
+    
     conn = get_db_connection()
-    cows = conn.execute('SELECT * FROM cows WHERE user_phone = ? ORDER BY id DESC', (user_phone,)).fetchall()
+    # फक्त या युझरच्या १० अंकी किंवा ९१ लावलेल्या नंबरशी जुळणाऱ्या गाई शोधा
+    cows = conn.execute(
+        'SELECT * FROM cows WHERE user_phone = ? OR user_phone LIKE ? ORDER BY id DESC', 
+        (user_phone, f"%{clean_phone}")
+    ).fetchall()
     
-    if not cows:
-        clean_phone = "".join(filter(str.isdigit, str(user_phone)))[-10:]
-        cows = conn.execute('SELECT * FROM cows WHERE user_phone LIKE ? ORDER BY id DESC', (f"%{clean_phone}",)).fetchall()
-    
-    if not cows:
-        cows = conn.execute('SELECT * FROM cows ORDER BY id DESC').fetchall()
-        
     conn.close()
+    
+    # जर या युझरची कोणतीही गाय नसेल तर मोकळी लिस्ट पाठवा (दुसऱ्याचा डेटा दाखवू नका)
     return jsonify([dict(cow) for cow in cows])
 
 @app.route('/api/cow/<tag_no>', methods=['GET'])
