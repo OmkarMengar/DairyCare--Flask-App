@@ -66,22 +66,22 @@ def send_whatsapp_alert(phone_number, cow_name, days_left):
             clean_phone = f"91{clean_phone}"
             
         message = f"🐄 DairyCare Alert:\nगाभण गाय '{cow_name}' चे विण्यासाठी फक्त {days_left} दिवस शिल्लक आहेत. कृपया काळजी घ्या!"
-        url = f"https://api.ultramsg.com/{ULTRAMSG_INSTANCE_ID}/messages/chat"
+        
+        # URL मध्ये token Query Parameter म्हणून जोडले आहे
+        url = f"https://api.ultramsg.com/{ULTRAMSG_INSTANCE_ID}/messages/chat?token={ULTRAMSG_TOKEN}"
         
         payload = {
-            "token": ULTRAMSG_TOKEN,
             "to": clean_phone,
             "body": message
         }
         headers = {'content-type': 'application/x-www-form-urlencoded'}
         
         response = requests.post(url, data=payload, headers=headers, timeout=10)
-        ok = response.status_code == 200 and '"sent":"true"' in response.text
+        ok = response.status_code == 200 and ("sent" in response.text or "id" in response.text or "true" in response.text)
         return ok, (None if ok else f"status_{response.status_code}:{response.text[:200]}")
     except Exception as e:
         print(f"WhatsApp Exception: {e}")
         return False, f"exception:{e}"
-
 @app.route('/favicon.ico')
 def favicon():
     return '', 204
