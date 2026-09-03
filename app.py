@@ -61,24 +61,33 @@ def send_whatsapp_alert(phone_number, cow_name, days_left):
     try:
         if not phone_number:
             return False, "no_phone"
+        
+        # फक्त अंक बाजूला काढणे
         clean_phone = "".join(filter(str.isdigit, str(phone_number)))
+        
+        # १० अंकी नंबर असल्यास +91 जोडणे, १४ अंकी किंवा इतरांसाठी + लावणे
         if len(clean_phone) == 10:
-            clean_phone = f"91{clean_phone}"
+            formatted_phone = f"+91{clean_phone}"
+        elif not clean_phone.startswith("+"):
+            formatted_phone = f"+{clean_phone}"
+        else:
+            formatted_phone = clean_phone
             
         message = f"🐄 DairyCare Alert:\nगाभण गाय '{cow_name}' चे विण्यासाठी फक्त {days_left} दिवस शिल्लक आहेत. कृपया काळजी घ्या!"
         
-        # UltraMsg Query Parameter URL Fix
         url = f"https://api.ultramsg.com/{ULTRAMSG_INSTANCE_ID}/messages/chat?token={ULTRAMSG_TOKEN}"
         
         payload = {
-            "to": clean_phone,
-            "body": message
+            "to": formatted_phone,
+            "body": message,
+            "priority": 10
         }
         headers = {'content-type': 'application/x-www-form-urlencoded'}
         
         response = requests.post(url, data=payload, headers=headers, timeout=10)
         res_text = response.text
-        ok = response.status_code == 200 and ("sent" in res_text or "id" in res_text)
+        
+        ok = response.status_code == 200 and ("sent" in res_text or "id" in res_text or "true" in res_text)
         return ok, (None if ok else f"status_{response.status_code}:{res_text[:200]}")
     except Exception as e:
         print(f"WhatsApp Exception: {e}")
